@@ -9,7 +9,7 @@ import Loader from "../Loader/Loader";
 import ErrorMessage from "../ErrorMessage/ErrorMessage";
 import MovieModal from "../MovieModal/MovieModal";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import ReactPaginate from "react-paginate";
+import Pagination from "../ReactPaginate/ReactPaginate";
 
 export default function App() {
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
@@ -27,12 +27,13 @@ export default function App() {
 
   const handleSearch = (value: string) => {
     setValue(value);
+    setCurrentPage(1);
   };
 
   console.log(data);
 
   useEffect(() => {
-    if (isSuccess && data && data.length === 0) {
+    if (isSuccess && data && data.results.length === 0) {
       toast("No movies found for your request.", {
         style: {
           borderRadius: "10px",
@@ -43,6 +44,10 @@ export default function App() {
     }
   }, [isSuccess, data]);
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
   const handleMovieSelect = (movie: Movie) => {
     setSelectedMovie(movie);
   };
@@ -52,8 +57,15 @@ export default function App() {
       {isLoading && <Loader />}
       {isError && <ErrorMessage />}
       <Toaster />
-      {data && data.length > 0 && (
-        <MovieGrid movies={data} onSelect={handleMovieSelect} />
+      {data && data.results.length > 0 && (
+        <MovieGrid movies={data.results} onSelect={handleMovieSelect} />
+      )}
+      {data && data.results.length > 0 && data.total_pages > 1 && (
+        <Pagination
+          totalPages={data.total_pages}
+          currentPage={currentPage}
+          onPageChange={handlePageChange}
+        />
       )}
       {selectedMovie && (
         <MovieModal movie={selectedMovie} onClose={closeModal} />

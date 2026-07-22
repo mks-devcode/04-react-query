@@ -2,45 +2,47 @@ import css from "./App.module.css";
 import SearchBar from "../SearchBar/SearchBar";
 import toast, { Toaster } from "react-hot-toast";
 import { fetchMovies } from "../../services/movieService";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Movie } from "../../types/movie";
 import MovieGrid from "../MovieGrid/MovieGrid";
 import Loader from "../Loader/Loader";
 import ErrorMessage from "../ErrorMessage/ErrorMessage";
 import MovieModal from "../MovieModal/MovieModal";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import ReactPaginate from "react-paginate";
 
 export default function App() {
-  const [movies, setMovies] = useState<Movie[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isError, setIsError] = useState<boolean>(false);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
+  const [value, setValue] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState<number>(1);
 
   const closeModal = () => setSelectedMovie(null);
 
-  const handleSearch = async (data: string) => {
-    try {
-      setMovies([]);
-      setIsError(false);
-      setIsLoading(true);
-      const requestMovies = await fetchMovies(data);
+  const { data, isLoading, isError, isSuccess } = useQuery({
+    queryKey: ["movie", value, currentPage],
+    queryFn: () => fetchMovies(value, currentPage),
+    enabled: value.trim() !== "",
+    placeholderData: keepPreviousData,
+  });
 
-      if (requestMovies.length === 0) {
-        toast("No movies found for your request.", {
-          style: {
-            borderRadius: "10px",
-            background: "#333",
-            color: "#fff",
-          },
-        });
-        return;
-      }
-      setMovies(requestMovies);
-    } catch {
-      setIsError(true);
-    } finally {
-      setIsLoading(false);
-    }
+  const handleSearch = (value: string) => {
+    setValue(value);
   };
+
+  console.log(data);
+
+  useEffect(() => {
+    if (isSuccess && data && data.length === 0) {
+      toast("No movies found for your request.", {
+        style: {
+          borderRadius: "10px",
+          background: "#333",
+          color: "#fff",
+        },
+      });
+    }
+  }, [isSuccess, data]);
+
   const handleMovieSelect = (movie: Movie) => {
     setSelectedMovie(movie);
   };
@@ -50,8 +52,8 @@ export default function App() {
       {isLoading && <Loader />}
       {isError && <ErrorMessage />}
       <Toaster />
-      {movies.length > 0 && (
-        <MovieGrid movies={movies} onSelect={handleMovieSelect} />
+      {data && data.length > 0 && (
+        <MovieGrid movies={data} onSelect={handleMovieSelect} />
       )}
       {selectedMovie && (
         <MovieModal movie={selectedMovie} onClose={closeModal} />

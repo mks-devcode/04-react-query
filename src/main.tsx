@@ -3,6 +3,8 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./components/App/App.tsx";
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
 // createRoot(document.getElementById("root")!).render(
 //   <StrictMode>
 //     <App />
@@ -12,9 +14,12 @@ import App from "./components/App/App.tsx";
 const root = document.getElementById("root");
 
 if (root !== null) {
+  const queryClient = new QueryClient();
   createRoot(root).render(
     <StrictMode>
-      <App />
+      <QueryClientProvider client={queryClient}>
+        <App />
+      </QueryClientProvider>
     </StrictMode>,
   );
 }
